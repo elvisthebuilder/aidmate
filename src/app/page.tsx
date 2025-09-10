@@ -40,11 +40,11 @@ export default function HomePage() {
       {/* Features Section */}
       <section id="features" className="py-24 md:py-36 bg-gray-50/80 relative">
         {/* Subtle Pattern */}
-        <div className="absolute inset-0 opacity-[0.06]">
+        {/* <div className="absolute inset-0 opacity-[0.06]">
           <div className="absolute inset-0" style={{
             backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 35px, #5483B3 35px, #5483B3 36px)`
           }}></div>
-        </div>
+        </div> */}
         
         <div className="max-w-7xl mx-auto px-4 md:px-6 relative">
           <div className="text-center mb-16 md:mb-24">

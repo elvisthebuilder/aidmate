@@ -22,22 +22,22 @@ export default function Footer() {
 
         {/* Quick Links */}
         <div className="flex flex-wrap justify-center gap-8 mb-12">
-          <Link href="#features" className="text-gray-400 hover:text-teal-400 transition-colors font-medium">
+          <Link href="#features" className="text-gray-400 hover:text-publue-500 transition-colors font-medium">
             Features
           </Link>
-          <Link href="#pricing" className="text-gray-400 hover:text-teal-400 transition-colors font-medium">
+          <Link href="#pricing" className="text-gray-400 hover:text-blue-500 transition-colors font-medium">
             Pricing
           </Link>
-          <Link href="/chat" className="text-gray-400 hover:text-teal-400 transition-colors font-medium">
+          <Link href="/chat" className="text-gray-400 hover:text-blue-500 transition-colors font-medium">
             Try Now
           </Link>
-          <Link href="#" className="text-gray-400 hover:text-teal-400 transition-colors font-medium">
+          <Link href="#" className="text-gray-400 hover:text-blue-500 transition-colors font-medium">
             Privacy
           </Link>
-          <Link href="#" className="text-gray-400 hover:text-teal-400 transition-colors font-medium">
+          <Link href="#" className="text-gray-400 hover:text-blue-500 transition-colors font-medium">
             Terms
           </Link>
-          <Link href="#" className="text-gray-400 hover:text-teal-400 transition-colors font-medium">
+          <Link href="#" className="text-gray-400 hover:text-blue-500 transition-colors font-medium">
             Support
           </Link>
         </div>
