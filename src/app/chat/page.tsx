@@ -44,7 +44,7 @@ export default function ChatPage() {
       textareaRef.current.style.height = 'auto'
       const scrollHeight = textareaRef.current.scrollHeight
       textareaRef.current.style.height = `${scrollHeight}px`
-      setIsTextareaExpanded(input.trim() !== '' && scrollHeight > 40)
+      setIsTextareaExpanded(scrollHeight > 40)
     }
   }
 
@@ -222,46 +222,67 @@ export default function ChatPage() {
 
         {/* Input */}
         <div className="px-6 sm:px-8 pb-8">
-          <div className={`bg-white/30 backdrop-blur-2xl m-auto md:w-5/6 w-full border border-white/40 ${isTextareaExpanded ? 'rounded-3xl ' : 'rounded-[100px]'} shadow-2xl p-4 sm:p-6 transition-all duration-200`}>
-            <div className="flex items-end space-x-2 sm:space-x-4">
-              <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors rounded-xl hover:bg-white/30 flex-shrink-0">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                </svg>
-              </button>
-              <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors rounded-xl hover:bg-white/30 flex-shrink-0">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-              </button>
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    sendMessage()
-                  }
-                }}
-                placeholder="Ask me about your health concerns..."
-                className="flex-1 bg-transparent border-none focus:outline-none resize-none text-gray-900 placeholder-gray-500 text-base sm:text-lg leading-relaxed min-h-[24px] max-h-48 overflow-y-auto align-top"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                rows={1}
-              />
-              <button
-                onClick={sendMessage}
-                disabled={!input.trim() || isLoading}
-                className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-navy-600 to-navy-900 hover:from-navy-700 hover:to-navy-900 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-full transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center flex-shrink-0"
-              >
-                {isLoading ? (
-                  <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                ) : (
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                  </svg>
+          <div className={`bg-white/30 backdrop-blur-2xl m-auto md:w-5/6 w-full border border-white/40 ${isTextareaExpanded ? 'rounded-3xl' : 'rounded-[100px]'} shadow-2xl ${isTextareaExpanded ? 'p-0' : 'p-4 sm:p-6'} transition-all duration-200`}>
+            <div className={`${isTextareaExpanded ? 'flex flex-col' : 'flex items-end space-x-2 sm:space-x-4'}`}>
+              {isTextareaExpanded && (
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      sendMessage()
+                    }
+                  }}
+                  placeholder="Ask me about your health concerns..."
+                  className="w-full bg-transparent border-none focus:outline-none resize-none text-gray-900 placeholder-gray-500 text-base sm:text-lg leading-relaxed overflow-y-auto p-4 sm:p-6 min-h-[120px] max-h-[300px]"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                />
+              )}
+              <div className={`flex ${isTextareaExpanded ? 'justify-between px-4 sm:px-6 pb-2' : 'items-end space-x-2 sm:space-x-4'} w-full`}>
+                <div className="flex items-center space-x-2">
+                  <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors rounded-xl hover:bg-white/30 flex-shrink-0">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
+                  </button>
+                  <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors rounded-xl hover:bg-white/30 flex-shrink-0">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                  </button>
+                </div>
+                {!isTextareaExpanded && (
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        sendMessage()
+                      }
+                    }}
+                    placeholder="Ask me about your health concerns..."
+                    className="flex-1 bg-transparent border-none focus:outline-none resize-none text-gray-900 placeholder-gray-500 text-base sm:text-lg leading-relaxed min-h-[24px] max-h-48 overflow-y-auto align-top"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  />
                 )}
-              </button>
+                <button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || isLoading}
+                  className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-navy-600 to-navy-900 hover:from-navy-700 hover:to-navy-900 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-full transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center flex-shrink-0"
+                >
+                  {isLoading ? (
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
