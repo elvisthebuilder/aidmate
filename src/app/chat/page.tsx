@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import DockSidebar from '@/components/DockSidebar'
 import MobileMenu from '@/components/MobileMenu'
 import TypewriterText from '@/components/TypewriterText'
+import AuthModal from '@/components/AuthModal'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -44,7 +45,6 @@ export default function ChatPage() {
       textareaRef.current.style.height = 'auto'
       const scrollHeight = textareaRef.current.scrollHeight
       textareaRef.current.style.height = `${scrollHeight}px`
-      setIsTextareaExpanded(scrollHeight > 40)
     }
   }
 
@@ -222,25 +222,28 @@ export default function ChatPage() {
 
         {/* Input */}
         <div className="px-6 sm:px-8 pb-8">
-          <div className={`bg-white/30 backdrop-blur-2xl m-auto md:w-5/6 w-full border border-white/40 ${isTextareaExpanded ? 'rounded-3xl' : 'rounded-[100px]'} shadow-2xl ${isTextareaExpanded ? 'p-0' : 'p-4 sm:p-6'} transition-all duration-200`}>
-            <div className={`${isTextareaExpanded ? 'flex flex-col' : 'flex items-end space-x-2 sm:space-x-4'}`}>
-              {isTextareaExpanded && (
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      sendMessage()
-                    }
-                  }}
-                  placeholder="Ask me about your health concerns..."
-                  className="w-full bg-transparent border-none focus:outline-none resize-none text-gray-900 placeholder-gray-500 text-base sm:text-lg leading-relaxed overflow-y-auto p-4 sm:p-6 min-h-[120px] max-h-[300px]"
-                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                />
-              )}
-              <div className={`flex ${isTextareaExpanded ? 'justify-between px-4 sm:px-6 pb-2' : 'items-end space-x-2 sm:space-x-4'} w-full`}>
+          <div className="bg-white/30 backdrop-blur-2xl m-auto md:w-5/6 w-full border border-white/40 rounded-3xl p-4 sm:p-6 shadow-2xl">
+            <div className="flex flex-col -space-y-2">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    sendMessage()
+                  }
+                }}
+                onFocus={() => {
+                  setTimeout(() => {
+                    textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                  }, 300)
+                }}
+                placeholder="Ask me about your health concerns..."
+                className="w-full bg-transparent border-none focus:outline-none resize-none text-gray-900 placeholder-gray-500 text-base sm:text-lg leading-relaxed overflow-y-auto min-h-[60px] max-h-[300px]"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              />
+              <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-2">
                   <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors rounded-xl hover:bg-white/30 flex-shrink-0">
                     <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -253,22 +256,6 @@ export default function ChatPage() {
                     </svg>
                   </button>
                 </div>
-                {!isTextareaExpanded && (
-                  <textarea
-                    ref={textareaRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault()
-                        sendMessage()
-                      }
-                    }}
-                    placeholder="Ask me about your health concerns..."
-                    className="flex-1 bg-transparent border-none focus:outline-none resize-none text-gray-900 placeholder-gray-500 text-base sm:text-lg leading-relaxed min-h-[24px] max-h-48 overflow-y-auto align-top"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                  />
-                )}
                 <button
                   onClick={sendMessage}
                   disabled={!input.trim() || isLoading}
@@ -300,34 +287,7 @@ export default function ChatPage() {
         setMobileMenuOpen={setMobileMenuOpen}
       />
 
-      {/* Auth Modal */}
-      {showAuth && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-800/90 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-medium">Sign In</h3>
-              <button onClick={() => setShowAuth(false)} className="text-gray-400 hover:text-white">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="space-y-4">
-              <input type="email" placeholder="Email" className="w-full bg-gray-700/50 border border-gray-600/50 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-teal-500" />
-              <input type="password" placeholder="Password" className="w-full bg-gray-700/50 border border-gray-600/50 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-teal-500" />
-              <button className="w-full bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 text-white py-3 rounded-xl transition-all duration-200">
-                Sign In
-              </button>
-              <button className="w-full bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl transition-colors border border-gray-600/50">
-                Continue with Google
-              </button>
-              <p className="text-center text-sm text-gray-400">
-                Don't have an account? <button className="text-teal-400 hover:text-teal-300">Sign up</button>
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
     </div>
   )
 }
