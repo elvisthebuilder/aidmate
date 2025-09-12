@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import MarkdownRenderer from './MarkdownRenderer'
 
 interface TypewriterTextProps {
   text: string
   speed?: number
 }
 
-export default function TypewriterText({ text, speed = 30 }: TypewriterTextProps) {
+export default function TypewriterText({ text, speed = 15 }: TypewriterTextProps) {
   const [displayText, setDisplayText] = useState('')
   const [currentIndex, setCurrentIndex] = useState(0)
 
@@ -27,5 +28,5 @@ export default function TypewriterText({ text, speed = 30 }: TypewriterTextProps
     setCurrentIndex(0)
   }, [text])
 
-  return <span className="whitespace-pre-wrap">{displayText}</span>
+  return <MarkdownRenderer content={displayText} />
 }

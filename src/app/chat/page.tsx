@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import DockSidebar from '@/components/DockSidebar'
 import MobileMenu from '@/components/MobileMenu'
-import TypewriterText from '@/components/TypewriterText'
+import MarkdownRenderer from '@/components/MarkdownRenderer'
 import AuthModal from '@/components/AuthModal'
-import AI_Avatar from '@/assets/svg/ai-avatar'
+import HealthAvatar from '@/components/HealthAvatar'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -72,13 +72,20 @@ export default function ChatPage() {
   }
 
   const generateResponse = async (message: string): Promise<string> => {
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    if (message.toLowerCase().includes('emergency')) {
-      return `🚨 Emergency Response\n\nIf this is a life-threatening emergency, call 911 immediately.\n\nFor "${message}":\n• Assess the situation\n• Check responsiveness\n• Call for help\n• Provide basic care\n\nThis is general guidance. Always seek professional medical help for emergencies.`
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message }),
+      })
+      
+      const data = await response.json()
+      return data.message
+    } catch (error) {
+      return 'I apologize, but I encountered an error. Please try again.'
     }
-    
-    return `Thank you for your question about "${message}". I'm here to help with health guidance and first aid information.\n\nPlease remember that I provide general information only and cannot replace professional medical advice. If you're experiencing a medical emergency, please call 911 immediately.\n\nHow can I assist you further?`
   }
 
   return (
@@ -129,10 +136,8 @@ export default function ChatPage() {
         <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-12 space-y-4  scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {messages.length === 0 && (
             <div className="text-center py-3">
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-r from-navy-600 to-navy-900 rounded-full md:rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
+              <div className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-navy-600 to-navy-900 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
+                <HealthAvatar className="w-10 h-10 md:w-12 md:h-12 text-white" />
               </div>
               <h2 className=" text-lg md:text-3xl font-light text-gray-900 mb-4">Welcome to AidMate</h2>
               <p className="text-sm md:text-lg text-gray-600 max-w-lg mx-auto leading-relaxed">
@@ -155,33 +160,84 @@ export default function ChatPage() {
           {messages.map((message, index) => (
             <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {message.role === 'assistant' && (
-                <div className="max-w-4xl">
+                <div className="w-full">
                   <div className="flex items-start space-x-4">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
-                      <AI_Avatar className="w-10 h-10" />
+                        <div className="w-12 h-12 bg-gradient-to-br from-navy-600 to-navy-800 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-xl border border-navy-500/20">
+                      <HealthAvatar className="w-6 h-6 text-white" />
                     </div>
-                    <div className="text-gray-900">
-                      <TypewriterText text={message.content} />
+                    <div className="text-gray-800 leading-relaxed min-w-0 flex-1">
+                      <MarkdownRenderer content={message.content} />
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 mt-3 ml-12">
-                    <button onClick={() => navigator.clipboard.writeText(message.content)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                  <div className="flex items-center space-x-2 mt-3 ml-16">
+                    <button 
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(message.content)
+                          console.log('✅ Message copied to clipboard')
+                        } catch (err) {
+                          console.error('❌ Failed to copy message:', err)
+                        }
+                      }} 
+                      className="p-2 text-navy-400 hover:text-navy-600 hover:bg-white/40 rounded-xl transition-all duration-200"
+                      title="Copy message"
+                    >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
                     </button>
-                    <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <button 
+                      onClick={async () => {
+                        const shareData = {
+                          title: 'AidMate Health Response',
+                          text: message.content
+                        }
+                        
+                        if (navigator.share) {
+                          try {
+                            await navigator.share(shareData)
+                            console.log('✅ Message shared successfully')
+                          } catch (err) {
+                            console.log('❌ Share cancelled or failed:', err)
+                          }
+                        } else if (navigator.clipboard) {
+                          try {
+                            await navigator.clipboard.writeText(message.content)
+                            console.log('✅ Message copied for sharing')
+                          } catch (err) {
+                            console.error('❌ Failed to copy for sharing:', err)
+                          }
+                        } else {
+                          console.log('❌ Share and clipboard not supported')
+                        }
+                      }}
+                      className="p-2 text-navy-400 hover:text-navy-600 hover:bg-white/40 rounded-xl transition-all duration-200"
+                      title="Share message"
+                    >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
                       </svg>
                     </button>
-                    <button onClick={() => {
-                      const lastUserMessage = messages.slice(0, index).reverse().find(m => m.role === 'user')
-                      if (lastUserMessage) {
-                        setMessages(prev => prev.slice(0, index))
-                        setInput(lastUserMessage.content)
-                      }
-                    }} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <button 
+                      onClick={async () => {
+                        const lastUserMessage = messages.slice(0, index).reverse().find(m => m.role === 'user')
+                        if (lastUserMessage && !isLoading) {
+                          setMessages(prev => prev.slice(0, index))
+                          setIsLoading(true)
+                          try {
+                            const aiResponse = await generateResponse(lastUserMessage.content)
+                            setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }])
+                          } catch (error) {
+                            setMessages(prev => [...prev, { role: 'assistant', content: 'I apologize, but I encountered an error. Please try again.' }])
+                          } finally {
+                            setIsLoading(false)
+                          }
+                        }
+                      }} 
+                      disabled={isLoading}
+                      className="p-2 text-navy-400 hover:text-navy-600 hover:bg-white/40 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Regenerate response"
+                    >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
@@ -191,7 +247,7 @@ export default function ChatPage() {
               )}
               
               {message.role === 'user' && (
-                <div className="bg-gradient-to-r from-navy-600 to-navy-900 text-white rounded-2xl rounded-br-md px-4 py-3 max-w-lg shadow-xl">
+                <div className="bg-gradient-to-br from-navy-600 via-navy-700 to-navy-900 text-white rounded-2xl rounded-br-md px-5 py-4 max-w-lg shadow-xl border border-navy-500/20 backdrop-blur-sm">
                   {message.content}
                 </div>
               )}
@@ -200,15 +256,14 @@ export default function ChatPage() {
 
           {isLoading && (
             <div className="flex items-start space-x-4">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center animate-pulse">
-                <AI_Avatar className="w-10 h-10" />
+              <div className="w-12 h-12 bg-gradient-to-br from-navy-600 to-navy-800 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg animate-pulse">
+                <HealthAvatar className="w-6 h-6 text-white" />
               </div>
-              <div className="bg-gray-800/40 backdrop-blur-xl border border-gray-700/50 rounded-2xl rounded-tl-md px-4 py-3 shadow-xl">
+              <div className="bg-white/90 backdrop-blur-md rounded-2xl px-5 py-4 shadow-lg border border-white/30">
                 <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
-                  <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
-                  <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
-                  <span className="text-gray-400 text-sm ml-2">Thinking...</span>
+                  <div className="w-2 h-2 bg-gray-600 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-gray-600 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                  <div className="w-2 h-2 bg-gray-600 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
                 </div>
               </div>
             </div>
@@ -231,11 +286,6 @@ export default function ChatPage() {
                     sendMessage()
                   }
                 }}
-                onFocus={() => {
-                  setTimeout(() => {
-                    textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                  }, 300)
-                }}
                 placeholder="Ask me about your health concerns..."
                 className="w-full bg-transparent border-none focus:outline-none resize-none text-gray-900 placeholder-gray-500 text-base sm:text-lg leading-relaxed overflow-y-auto min-h-[60px] max-h-[300px]"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -249,7 +299,7 @@ export default function ChatPage() {
                   </button>
                   <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors rounded-xl hover:bg-white/30 flex-shrink-0">
                     <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 0 01-3 3z" />
                     </svg>
                   </button>
                 </div>
