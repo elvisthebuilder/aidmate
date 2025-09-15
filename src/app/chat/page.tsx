@@ -8,6 +8,7 @@ import ChatMessage from '@/components/ChatMessage'
 import ChatInput from '@/components/ChatInput'
 import LoadingIndicator from '@/components/LoadingIndicator'
 import HealthAvatar from '@/components/HealthAvatar'
+import DiscoverView from '@/components/DiscoverView'
 import { useTheme } from '@/contexts/ThemeContext'
 
 interface Message {
@@ -25,6 +26,7 @@ export default function ChatPage() {
   const [showAuth, setShowAuth] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isTextareaExpanded, setIsTextareaExpanded] = useState(false)
+  const [currentView, setCurrentView] = useState<'chat' | 'discover'>('chat')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -148,6 +150,8 @@ export default function ChatPage() {
       <DockSidebar 
         fullSidebar={fullSidebar}
         setFullSidebar={setFullSidebar}
+        currentView={currentView}
+        setCurrentView={setCurrentView}
       />
 
       {/* Main Chat Area */}
@@ -158,71 +162,77 @@ export default function ChatPage() {
         <div className="px-6 sm:px-8 py-3">
         </div>
 
-        {/* Messages */}
-        <div className={`flex-1 overflow-y-auto px-6 sm:px-8 py-12 space-y-4 scrollbar-hide transition-colors duration-300 ${
-          theme === 'dark' ? 'text-gray-100' : 'text-gray-900'
-        }`} style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          {messages.length === 0 && (
-            <div className="text-center py-3">
-              <div className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-navy-600 to-navy-900 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
-                <HealthAvatar className="w-10 h-10 md:w-12 md:h-12 text-white" />
-              </div>
-              <h2 className={`text-lg md:text-3xl font-light mb-4 ${
-                theme === 'dark' ? 'text-gray-100' : 'text-gray-900'
-              }`}>Welcome to AidMate</h2>
-              <p className={`text-sm md:text-lg max-w-lg mx-auto leading-relaxed ${
-                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
-              }`}>
-                Your intelligent health companion. Ask me anything about symptoms, treatments, or general health guidance.
-              </p>
-              <div className="flex flex-wrap justify-center gap-3 mt-8">
-                <button className={`px-4 py-2 rounded-2xl text-sm font-medium transition-all duration-200 border ${
-                  theme === 'dark'
-                    ? 'bg-slate-800/50 hover:bg-slate-700/70 text-gray-200 border-slate-600/30 hover:border-slate-500/50'
-                    : 'bg-white/40 hover:bg-white/60 text-gray-700 border-white/20 hover:border-white/40'
-                }`}>
-                  💊 Medications
-                </button>
-                <button className={`px-4 py-2 rounded-2xl text-sm font-medium transition-all duration-200 border ${
-                  theme === 'dark'
-                    ? 'bg-slate-800/50 hover:bg-slate-700/70 text-gray-200 border-slate-600/30 hover:border-slate-500/50'
-                    : 'bg-white/40 hover:bg-white/60 text-gray-700 border-white/20 hover:border-white/40'
-                }`}>
-                  🤒 Symptoms
-                </button>
-                <button className={`px-4 py-2 rounded-2xl text-sm font-medium transition-all duration-200 border ${
-                  theme === 'dark'
-                    ? 'bg-slate-800/50 hover:bg-slate-700/70 text-gray-200 border-slate-600/30 hover:border-slate-500/50'
-                    : 'bg-white/40 hover:bg-white/60 text-gray-700 border-white/20 hover:border-white/40'
-                }`}>
-                  🚨 First Aid
-                </button>
-              </div>
+        {currentView === 'chat' ? (
+          <>
+            {/* Messages */}
+            <div className={`flex-1 overflow-y-auto px-6 sm:px-8 py-12 space-y-4 scrollbar-hide transition-colors duration-300 ${
+              theme === 'dark' ? 'text-gray-100' : 'text-gray-900'
+            }`} style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              {messages.length === 0 && (
+                <div className="text-center py-3">
+                  <div className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-navy-600 to-navy-900 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
+                    <HealthAvatar className="w-10 h-10 md:w-12 md:h-12 text-white" />
+                  </div>
+                  <h2 className={`text-lg md:text-3xl font-light mb-4 ${
+                    theme === 'dark' ? 'text-gray-100' : 'text-gray-900'
+                  }`}>Welcome to AidMate</h2>
+                  <p className={`text-sm md:text-lg max-w-lg mx-auto leading-relaxed ${
+                    theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
+                    Your intelligent health companion. Ask me anything about symptoms, treatments, or general health guidance.
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-3 mt-8">
+                    <button className={`px-4 py-2 rounded-2xl text-sm font-medium transition-all duration-200 border ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/50 hover:bg-slate-700/70 text-gray-200 border-slate-600/30 hover:border-slate-500/50'
+                        : 'bg-white/40 hover:bg-white/60 text-gray-700 border-white/20 hover:border-white/40'
+                    }`}>
+                      💊 Medications
+                    </button>
+                    <button className={`px-4 py-2 rounded-2xl text-sm font-medium transition-all duration-200 border ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/50 hover:bg-slate-700/70 text-gray-200 border-slate-600/30 hover:border-slate-500/50'
+                        : 'bg-white/40 hover:bg-white/60 text-gray-700 border-white/20 hover:border-white/40'
+                    }`}>
+                      🤒 Symptoms
+                    </button>
+                    <button className={`px-4 py-2 rounded-2xl text-sm font-medium transition-all duration-200 border ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/50 hover:bg-slate-700/70 text-gray-200 border-slate-600/30 hover:border-slate-500/50'
+                        : 'bg-white/40 hover:bg-white/60 text-gray-700 border-white/20 hover:border-white/40'
+                    }`}>
+                      🚨 First Aid
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {messages.map((message, index) => (
+                <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <ChatMessage 
+                    message={message}
+                    index={index}
+                    isLoading={isLoading}
+                    onRegenerate={handleRegenerate}
+                  />
+                </div>
+              ))}
+
+              {isLoading && <LoadingIndicator />}
+              
+              <div ref={messagesEndRef} />
             </div>
-          )}
 
-          {messages.map((message, index) => (
-            <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <ChatMessage 
-                message={message}
-                index={index}
-                isLoading={isLoading}
-                onRegenerate={handleRegenerate}
-              />
-            </div>
-          ))}
-
-          {isLoading && <LoadingIndicator />}
-          
-          <div ref={messagesEndRef} />
-        </div>
-
-        <ChatInput 
-          input={input}
-          setInput={setInput}
-          isLoading={isLoading}
-          onSendMessage={sendMessage}
-        />
+            <ChatInput 
+              input={input}
+              setInput={setInput}
+              isLoading={isLoading}
+              onSendMessage={sendMessage}
+            />
+          </>
+        ) : (
+          <DiscoverView />
+        )}
         
         {/* Medical Disclaimer */}
         <div className="px-6 sm:px-8 pb-6">
@@ -239,6 +249,8 @@ export default function ChatPage() {
       <MobileMenu 
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
+        currentView={currentView}
+        setCurrentView={setCurrentView}
       />
 
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />

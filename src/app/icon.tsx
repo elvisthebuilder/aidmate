@@ -1,5 +1,4 @@
 import { ImageResponse } from 'next/og'
-import HealthAvatar from '@/components/HealthAvatar'
 
 export const runtime = 'edge'
 
