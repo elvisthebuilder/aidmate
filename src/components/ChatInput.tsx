@@ -1,102 +1,200 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRef, useEffect, useState } from 'react'
+import { useTheme } from '@/contexts/ThemeContext'
 
-export default function ChatInput() {
-  const [demoMessage, setDemoMessage] = useState('')
-  const router = useRouter()
+interface ChatInputProps {
+  input: string
+  setInput: (value: string) => void
+  isLoading: boolean
+  onSendMessage: () => void
+}
 
-  const handleDemoSubmit = () => {
-    if (!demoMessage.trim()) return
-    router.push(`/chat?message=${encodeURIComponent(demoMessage.trim())}`)
+export default function ChatInput({ input, setInput, isLoading, onSendMessage }: ChatInputProps) {
+  const { theme } = useTheme()
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isRecording, setIsRecording] = useState(false)
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null)
+
+  const adjustTextareaHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      const scrollHeight = textareaRef.current.scrollHeight
+      textareaRef.current.style.height = `${scrollHeight}px`
+    }
   }
 
-  const handleKeyPress = (e:any) => {
-    if (e.key === 'Enter') {
+  useEffect(() => {
+    adjustTextareaHeight()
+  }, [input])
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      handleDemoSubmit()
+      onSendMessage()
+    }
+  }
+
+  const handleFileUpload = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      console.log('File selected:', file.name)
+    }
+  }
+
+  const startRecording = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('Speech recognition not supported in this browser')
+      return
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const recognition = new SpeechRecognition()
+    
+    recognition.continuous = false
+    recognition.interimResults = true
+    recognition.lang = 'en-US'
+    recognition.maxAlternatives = 1
+
+    recognition.onstart = () => {
+      setIsRecording(true)
+    }
+
+    recognition.onresult = (event) => {
+      let transcript = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript
+      }
+      setInput(transcript)
+    }
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error)
+      setIsRecording(false)
+      if (event.error === 'network') {
+        alert('Network error. Please check your internet connection and try again.')
+      } else if (event.error === 'not-allowed') {
+        alert('Microphone access denied. Please allow microphone permissions.')
+      }
+    }
+
+    recognition.onend = () => {
+      setIsRecording(false)
+    }
+
+    recognition.start()
+    setRecognition(recognition)
+  }
+
+  const stopRecording = () => {
+    if (recognition) {
+      recognition.stop()
+      setRecognition(null)
+    }
+    setIsRecording(false)
+  }
+
+  const handleMicClick = () => {
+    if (isRecording) {
+      stopRecording()
+    } else {
+      startRecording()
+    }
+  }
+
+  // Add type declaration for Speech Recognition
+  declare global {
+    interface Window {
+      SpeechRecognition: any
+      webkitSpeechRecognition: any
     }
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* AI Message */}
-      <div className="flex items-start space-x-4 mb-8">
-        <div className="bg-gradient-to-r from-blue-50 to-teal-50 border border-blue-100 p-5 flex-1 rounded-3xl flex items-center gap-4 shadow-sm">
-          <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-teal-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md">
-            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-gray-600 text-sm md:text-normal leading-relaxed">Hello! I'm your AI health assistant. What can I help you with today?</p>
+    <div className="px-6 sm:px-8 pb-8">
+      <div className={`backdrop-blur-2xl m-auto md:w-5/6 w-full rounded-3xl p-4 sm:p-6 shadow-2xl transition-colors duration-300 ${
+        theme === 'dark'
+          ? 'bg-gray-800/30 border border-gray-600/40'
+          : 'bg-white/30 border border-white/40'
+      }`}>
+        <div className="flex flex-col -space-y-2">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Ask me about your health concerns..."
+            className={`w-full bg-transparent border-none focus:outline-none resize-none text-base sm:text-lg leading-relaxed overflow-y-auto min-h-[60px] max-h-[300px] transition-colors duration-300 ${
+              theme === 'dark'
+                ? 'text-gray-100 placeholder-gray-400'
+                : 'text-gray-900 placeholder-gray-500'
+            }`}
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          />
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,audio/*,.pdf,.doc,.docx"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <button 
+                onClick={handleFileUpload}
+                className={`p-2 transition-colors rounded-xl flex-shrink-0 ${
+                  theme === 'dark'
+                    ? 'text-gray-400 hover:text-gray-200 hover:bg-slate-700/40'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-white/30'
+                }`}
+                title="Attach file"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+              </button>
+              <button 
+                onClick={handleMicClick}
+                className={`p-2 transition-colors rounded-xl flex-shrink-0 ${
+                  isRecording
+                    ? 'text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20'
+                    : theme === 'dark'
+                      ? 'text-gray-400 hover:text-gray-200 hover:bg-slate-700/40'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-white/30'
+                }`}
+                title={isRecording ? 'Stop recording' : 'Start voice recording'}
+              >
+                {isRecording ? (
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            <button
+              onClick={onSendMessage}
+              disabled={!input?.trim() || isLoading}
+              className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-navy-600 to-navy-900 hover:from-navy-700 hover:to-navy-900 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-full transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center flex-shrink-0"
+            >
+              {isLoading ? (
+                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
-      </div>
-
-      {/* Input */}
-      <div className="relative mb-4">
-        <input
-          type="text"
-          value={demoMessage}
-          onChange={(e) => setDemoMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Describe your symptoms or ask a health question..."
-          className="w-full h-32 border border-gray-200 rounded-2xl px-16 pr-16 shadow-sm"
-          style={{ 
-            outline: 'none',
-            boxShadow: 'none',
-            border: '1px solid rgb(229 231 235)'
-          }}
-          onFocus={(e) => {
-            e.target.style.outline = 'none'
-            e.target.style.border = 'none'
-            e.target.style.boxShadow = '0 0 0 2px rgb(59 130 246 / 0.5)'
-            // Scroll input into view on mobile
-            setTimeout(() => {
-              e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            }, 300)
-          }}
-          onBlur={(e) => {
-            e.target.style.boxShadow = 'none'
-            e.target.style.border = '1px solid rgb(229 231 235)'
-          }}
-        />
-        <button
-          onClick={() => router.push('/chat')}
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-10 h-10 rounded-full transition-colors flex items-center hover:cursor-pointer justify-center"
-        >
-          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </button>
-        <button
-          onClick={handleDemoSubmit}
-          disabled={!demoMessage.trim()}
-          className="absolute right-3 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center shadow-sm"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Suggestions */}
-      <div className="flex flex-wrap justify-center gap-3">
-        {[
-          { label: '🤕 Headache', prompt: 'I have been experiencing headaches for the past few days along with fatigue. The pain is usually on both sides of my head and gets worse in the afternoon. What could be causing this and what should I do?' },
-          { label: '🩹 First Aid', prompt: 'I just got a minor cut on my finger while cooking. It is bleeding a little but not too deep. What are the proper first aid steps I should take to clean and treat this wound?' },
-          { label: '🥗 Nutrition', prompt: 'I want to improve my eating habits and maintain a healthier diet. Can you provide me with some practical nutrition advice and meal planning tips for better overall health?' }
-        ].map((suggestion, index) => (
-          <button 
-            key={index}
-            onClick={() => setDemoMessage(suggestion.prompt)}
-            className="bg-white border border-blue-100 hover:bg-blue-50 hover:border-blue-200 text-gray-700 hover:text-blue-700 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md"
-          >
-            {suggestion.label}
-          </button>
-        ))}
       </div>
     </div>
   )

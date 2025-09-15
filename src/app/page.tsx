@@ -1,13 +1,23 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '../components/Navbar'
 import ChatInput from '../components/ChatInput'
 import Footer from '../components/Footer'
 import GridPattern from '../components/GridPattern'
 
-
 export default function HomePage() {
+  const [input, setInput] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+
+  const handleSendMessage = () => {
+    if (input.trim()) {
+      router.push(`/chat?q=${encodeURIComponent(input.trim())}`)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-navy-50 via-white to-navy-100 relative overflow-hidden">
@@ -32,7 +42,21 @@ export default function HomePage() {
               Instant medical guidance powered by AI. Get personalized health insights, symptom analysis, and care recommendations.
             </p>
 
-            <ChatInput />
+            <div className="mb-6">
+              <p className="text-base text-gray-500 font-medium flex items-center justify-center gap-2">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                AI-powered health assistant ready to help
+              </p>
+            </div>
+
+            <ChatInput 
+              input={input}
+              setInput={setInput}
+              isLoading={isLoading}
+              onSendMessage={handleSendMessage}
+            />
           </div>
         </div>
       </section>
