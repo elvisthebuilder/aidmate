@@ -8,9 +8,10 @@ interface DockSidebarProps {
   setFullSidebar: (full: boolean) => void
   currentView: 'chat' | 'discover'
   setCurrentView: (view: 'chat' | 'discover') => void
+  onOpenHealthDashboard: () => void
 }
 
-export default function DockSidebar({ fullSidebar, setFullSidebar, currentView, setCurrentView }: DockSidebarProps) {
+export default function DockSidebar({ fullSidebar, setFullSidebar, currentView, setCurrentView, onOpenHealthDashboard }: DockSidebarProps) {
   const { theme } = useTheme()
   return (
     <div className={`hidden lg:block fixed z-50 transition-all duration-500 ease-out ${fullSidebar ? 'left-0 top-0 bottom-0 w-80' : 'left-6 top-1/2 -translate-y-1/2 w-14'}`}>
@@ -28,7 +29,10 @@ export default function DockSidebar({ fullSidebar, setFullSidebar, currentView, 
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
             </button>
-            <button className="w-8 h-8 flex items-center justify-center transition-all duration-200 group hover:bg-purple-500/20 hover:rounded-2xl hover:shadow-lg">
+            <button 
+              onClick={onOpenHealthDashboard}
+              className="w-8 h-8 flex items-center justify-center transition-all duration-200 group hover:bg-purple-500/20 hover:rounded-2xl hover:shadow-lg"
+            >
               <svg className="w-5 h-5 text-purple-400 group-hover:text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
@@ -106,7 +110,9 @@ export default function DockSidebar({ fullSidebar, setFullSidebar, currentView, 
             }`}></div>
             
             <div className="space-y-1">
-              <button className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+              <button 
+                onClick={onOpenHealthDashboard}
+                className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
                 theme === 'dark' ? 'hover:bg-slate-700 text-gray-300 hover:text-white' : 'hover:bg-blue-50/80 text-gray-700 hover:text-blue-900'
               }`}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

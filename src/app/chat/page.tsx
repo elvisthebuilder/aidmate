@@ -9,6 +9,7 @@ import ChatInput from '@/components/ChatInput'
 import LoadingIndicator from '@/components/LoadingIndicator'
 import HealthAvatar from '@/components/HealthAvatar'
 import DiscoverView from '@/components/DiscoverView'
+import HealthDashboard from '@/components/HealthDashboard'
 import { useTheme } from '@/contexts/ThemeContext'
 
 interface Message {
@@ -27,6 +28,7 @@ export default function ChatPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isTextareaExpanded, setIsTextareaExpanded] = useState(false)
   const [currentView, setCurrentView] = useState<'chat' | 'discover'>('chat')
+  const [showHealthDashboard, setShowHealthDashboard] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -103,59 +105,65 @@ export default function ChatPage() {
         ? 'bg-slate-800 text-white' 
         : 'bg-gradient-to-br from-navy-50 via-white to-navy-100'
     }`}>
-      {/* Header */}
-<div className={`w-full h-16 flex items-center justify-between px-6 sm:px-8 fixed top-0 left-0 right-0 z-30 transition-colors duration-300 ${
-  theme === 'dark'
-    ? 'bg-slate-800 backdrop-blur-sm border-b border-gray-700 shadow-sm md:bg-transparent md:backdrop-blur-0 md:border-none md:shadow-none'
-    : 'bg-gray-50/60 backdrop-blur-sm border-b border-gray-200 shadow-sm md:bg-transparent md:backdrop-blur-0 md:border-none md:shadow-none'
-}`}>      {/* Side Panel Menu - Fixed to left edge (mobile only) */}
-      <button 
-        onClick={() => setMobileMenuOpen(true)}
-        className={`lg:hidden fixed top-3 left-4 z-40 p-2 transition-colors backdrop-blur-xl rounded-lg shadow-lg hover:shadow-xl ${
+      {/* Header - Hidden when discover is active */}
+      {currentView !== 'discover' && (
+        <div className={`w-full h-16 flex items-center justify-between px-6 sm:px-8 fixed top-0 left-0 right-0 z-30 transition-colors duration-300 ${
           theme === 'dark'
-            ? 'text-gray-300 hover:text-white bg-slate-800/50 hover:bg-slate-700/60'
-            : 'text-gray-600 hover:text-gray-900 bg-white/30 hover:bg-white/40'
-        }`}
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8m-8 6h16" />
-        </svg>
-      </button>
-      
-      {/* Theme Toggle - Fixed to screen edge (desktop only) */}
-      <button 
-        onClick={toggleTheme}
-        className={`hidden lg:block fixed top-3 right-32 z-40 p-2.5 backdrop-blur-xl rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl ${
-          theme === 'dark'
-            ? 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white'
-            : 'bg-white/30 hover:bg-white/40 text-gray-600 hover:text-gray-900'
-        }`}
-      >
-        {theme === 'dark' ? (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-        ) : (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-          </svg>
-        )}
-      </button>
-      
-      {/* Sign In Button - Fixed to screen edge */}
-      <button onClick={() => setShowAuth(true)} className="fixed top-3 right-4 z-40 px-6 py-2.5 bg-navy-600  dark:bg-blue-600/60 hover:bg-navy-700 text-white rounded-lg transition-all duration-200 font-medium shadow-lg hover:shadow-xl">
-        Sign In
-      </button>
-      </div>
+            ? 'bg-slate-800 backdrop-blur-sm border-b border-gray-700 shadow-sm md:bg-transparent md:backdrop-blur-0 md:border-none md:shadow-none'
+            : 'bg-gray-50/60 backdrop-blur-sm border-b border-gray-200 shadow-sm md:bg-transparent md:backdrop-blur-0 md:border-none md:shadow-none'
+        }`}>
+          {/* Side Panel Menu - Fixed to left edge (mobile only) */}
+          <button 
+            onClick={() => setMobileMenuOpen(true)}
+            className={`lg:hidden fixed top-3 left-4 z-40 p-2 transition-colors backdrop-blur-xl rounded-lg shadow-lg hover:shadow-xl ${
+              theme === 'dark'
+                ? 'text-gray-300 hover:text-white bg-slate-800/50 hover:bg-slate-700/60'
+                : 'text-gray-600 hover:text-gray-900 bg-white/30 hover:bg-white/40'
+            }`}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8m-8 6h16" />
+            </svg>
+          </button>
+          
+          {/* Theme Toggle - Fixed to screen edge (desktop only) */}
+          <button 
+            onClick={toggleTheme}
+            className={`hidden lg:block fixed top-3 right-32 z-40 p-2.5 backdrop-blur-xl rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl ${
+              theme === 'dark'
+                ? 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white'
+                : 'bg-white/30 hover:bg-white/40 text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            {theme === 'dark' ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            )}
+          </button>
+          
+          {/* Sign In Button - Fixed to screen edge */}
+          <button onClick={() => setShowAuth(true)} className="fixed top-3 right-4 z-40 px-6 py-2.5 bg-navy-600  dark:bg-blue-600/60 hover:bg-navy-700 text-white rounded-lg transition-all duration-200 font-medium shadow-lg hover:shadow-xl">
+            Sign In
+          </button>
+        </div>
+      )}
       <DockSidebar 
         fullSidebar={fullSidebar}
         setFullSidebar={setFullSidebar}
         currentView={currentView}
         setCurrentView={setCurrentView}
+        onOpenHealthDashboard={() => setShowHealthDashboard(true)}
       />
 
       {/* Main Chat Area */}
-      <div className={`flex-1 flex flex-col max-w-6xl mx-auto w-full transition-all duration-500 ${
+      <div className={`flex-1 flex flex-col w-full transition-all duration-500 ${
+        currentView === 'chat' ? 'max-w-6xl mx-auto' : ''
+      } ${
         fullSidebar ? 'lg:ml-80' : ''
       }`}>
         {/* Header */}
@@ -234,16 +242,18 @@ export default function ChatPage() {
           <DiscoverView />
         )}
         
-        {/* Medical Disclaimer */}
-        <div className="px-6 sm:px-8 pb-6">
-          <div className={`text-center text-xs rounded-2xl px-4 py-2 transition-colors duration-300 ${
-            theme === 'dark'
-              ? 'text-gray-400 md:bg-transparent bg-slate-800/30'
-              : 'text-gray-500 md:bg-transparent bg-white/20'
-          }`}>
-            🚨 For medical emergencies, call 911 immediately • AI responses are for informational purposes only
+        {/* Medical Disclaimer - Hidden when discover is active */}
+        {currentView === 'chat' && (
+          <div className="px-6 sm:px-8 pb-6">
+            <div className={`text-center text-xs rounded-2xl px-4 py-2 transition-colors duration-300 ${
+              theme === 'dark'
+                ? 'text-gray-400 md:bg-transparent bg-slate-800/30'
+                : 'text-gray-500 md:bg-transparent bg-white/20'
+            }`}>
+              🚨 For medical emergencies, call 911 immediately • AI responses are for informational purposes only
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <MobileMenu 
@@ -251,9 +261,15 @@ export default function ChatPage() {
         setMobileMenuOpen={setMobileMenuOpen}
         currentView={currentView}
         setCurrentView={setCurrentView}
+        onOpenHealthDashboard={() => setShowHealthDashboard(true)}
       />
 
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
+      
+      <HealthDashboard 
+        isOpen={showHealthDashboard} 
+        onClose={() => setShowHealthDashboard(false)} 
+      />
     </div>
   )
 }
