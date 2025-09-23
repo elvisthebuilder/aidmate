@@ -2,8 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useTheme } from '@/contexts/ThemeContext'
+import { supabase } from '@/lib/supabase'
 import HealthDashboard from '@/components/HealthDashboard'
+import MobileMenu from '@/components/MobileMenu'
+import DockSidebar from '@/components/DockSidebar'
 
 interface NewsArticle {
   title: string
@@ -76,13 +80,9 @@ const generateFallbackArticles = (category: string): NewsArticle[] => {
 
 const fetchHealthNews = async (query: string, page: number = 1): Promise<NewsArticle[]> => {
   try {
-    const apiKey = process.env.NEXT_PUBLIC_NEWS_API_KEY
-    if (!apiKey || apiKey === 'demo') {
-      return generateFallbackArticles(query)
-    }
-    
+    // Using The Guardian API (free, no upgrade required)
     const response = await fetch(
-      `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&sortBy=publishedAt&pageSize=20&page=${page}&language=en&apiKey=${apiKey}`
+      `https://content.guardianapis.com/search?q=${encodeURIComponent(query)}&page=${page}&page-size=20&show-fields=headline,byline,thumbnail,bodyText,trailText&api-key=test`
     )
     
     if (!response.ok) {
@@ -90,7 +90,18 @@ const fetchHealthNews = async (query: string, page: number = 1): Promise<NewsArt
     }
     
     const data = await response.json()
-    return data.articles || generateFallbackArticles(query)
+    const articles = data.response?.results || []
+    
+    return articles.map((article: any) => ({
+      title: article.fields?.headline || article.webTitle,
+      description: article.fields?.trailText || 'Health and wellness insights.',
+      content: article.fields?.bodyText || article.fields?.trailText || '',
+      url: article.webUrl,
+      urlToImage: article.fields?.thumbnail || 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=400&fit=crop',
+      publishedAt: article.webPublicationDate,
+      source: { name: 'The Guardian' },
+      author: article.fields?.byline || 'The Guardian'
+    }))
   } catch (error) {
     console.error('Failed to fetch news:', error)
     return generateFallbackArticles(query)
@@ -198,6 +209,7 @@ const convertToBlogPost = (article: NewsArticle, category: string): BlogPost => 
 
 export default function DiscoverPage() {
   const { theme } = useTheme()
+  const router = useRouter()
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
@@ -209,6 +221,10 @@ export default function DiscoverPage() {
   const [loadingContent, setLoadingContent] = useState(false)
   const [categoryIndex, setCategoryIndex] = useState(0)
   const [showDashboard, setShowDashboard] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [recentChats, setRecentChats] = useState<any[]>([])
+  const [user, setUser] = useState<any>(null)
+  const [fullSidebar, setFullSidebar] = useState(false)
 
   const loadMorePosts = useCallback(async () => {
     if (loading || !hasMore) return
@@ -309,6 +325,50 @@ export default function DiscoverPage() {
   }, [])
 
   useEffect(() => {
+    // Get initial user session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      if (session?.user) {
+        fetchRecentChats(session.user.id)
+      }
+    })
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      if (session?.user) {
+        fetchRecentChats(session.user.id)
+      } else {
+        setRecentChats([])
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const fetchRecentChats = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_history')
+        .select('id, user_message, created_at')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(10)
+      
+      if (error) {
+        console.log('No chats found or table access issue:', error.message || 'Unknown error')
+        setRecentChats([])
+        return
+      }
+      
+      setRecentChats(data || [])
+    } catch (error) {
+      console.log('Chat fetch failed, continuing without history')
+      setRecentChats([])
+    }
+  }
+
+  useEffect(() => {
     if (selectedPost) {
       setFullContent(selectedPost.content)
       setLoadingContent(false)
@@ -339,21 +399,40 @@ export default function DiscoverPage() {
   })
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className={`h-screen flex flex-col overflow-hidden transition-all duration-500 ${
+      fullSidebar ? 'lg:pl-80' : 'lg:pl-20'
+    }`}>
       <header className="sticky top-0 z-50 backdrop-blur-md border-b border-slate-200/10">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h1 className={`text-2xl font-bold ${
-                theme === 'dark' ? 'text-white' : 'text-slate-900'
-              }`}>Discover Health & Wellness</h1>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {/* Mobile Menu Button */}
+                  <button 
+                    onClick={() => setMobileMenuOpen(true)}
+                    className={`md:hidden p-2 rounded-lg transition-colors ${
+                      theme === 'dark'
+                        ? 'text-gray-300 hover:text-white hover:bg-slate-700'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8m-8 6h16" />
+                    </svg>
+                  </button>
+                  <h1 className={`text-2xl font-bold ${
+                    theme === 'dark' ? 'text-white' : 'text-slate-900'
+                  }`}>Discover Health & Wellness</h1>
+                </div>
+              </div>
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Search articles..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`w-64 pl-10 pr-4 py-2 rounded-full border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  className={`w-full md:w-64 pl-10 pr-4 py-2 rounded-full border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                     theme === 'dark' 
                       ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-400' 
                       : 'bg-white border-slate-300 text-slate-900 placeholder-slate-500'
@@ -386,7 +465,28 @@ export default function DiscoverPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto">
+      <main 
+        className="flex-1 overflow-y-auto"
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: theme === 'dark' ? '#475569 transparent' : '#cbd5e1 transparent'
+        }}
+      >
+        <style jsx>{`
+          main::-webkit-scrollbar {
+            width: 6px;
+          }
+          main::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          main::-webkit-scrollbar-thumb {
+            background-color: ${theme === 'dark' ? '#475569' : '#cbd5e1'};
+            border-radius: 3px;
+          }
+          main::-webkit-scrollbar-thumb:hover {
+            background-color: ${theme === 'dark' ? '#334155' : '#94a3b8'};
+          }
+        `}</style>
         {selectedPost ? (
           <div className="max-w-4xl mx-auto px-6 py-8">
             <button
@@ -409,6 +509,7 @@ export default function DiscoverPage() {
                   src={selectedPost.image}
                   alt={selectedPost.title}
                   fill
+                  sizes="100vw"
                   className="object-cover"
                 />
                 <div className="absolute top-4 left-4">
@@ -546,6 +647,7 @@ export default function DiscoverPage() {
                       src={filteredPosts[0].image}
                       alt={filteredPosts[0].title}
                       fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
                       className="object-cover"
                     />
                     <div className="absolute top-4 left-4">
@@ -590,6 +692,7 @@ export default function DiscoverPage() {
                       src={post.image}
                       alt={post.title}
                       fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
@@ -649,6 +752,132 @@ export default function DiscoverPage() {
           </div>
         )}
       </main>
+      
+      <DockSidebar 
+        fullSidebar={fullSidebar}
+        setFullSidebar={setFullSidebar}
+        currentView="discover"
+        setCurrentView={(view) => {
+          if (view === 'chat') {
+            router.push('/chat')
+          }
+        }}
+        onOpenHealthDashboard={() => {
+          console.log('Health dashboard clicked')
+          setShowDashboard(true)
+        }}
+        onOpenSettings={() => {}}
+        recentChats={recentChats}
+        onNewChat={() => {
+          console.log('DockSidebar new chat clicked')
+          window.location.href = '/chat'
+        }}
+        onRefreshChats={() => user && fetchRecentChats(user.id)}
+        onLoadChat={(chatId: string) => {
+          router.push(`/chat?id=${chatId}`)
+        }}
+        onRenameChat={async (chatId: string, newTitle: string) => {
+          if (!user || !newTitle.trim()) return
+          
+          try {
+            const { error } = await supabase
+              .from('chat_history')
+              .update({ user_message: newTitle.trim() })
+              .eq('id', chatId)
+              .eq('user_id', user.id)
+            
+            if (!error) {
+              setRecentChats(prev => 
+                prev.map(chat => 
+                  chat.id === chatId 
+                    ? { ...chat, user_message: newTitle.trim() }
+                    : chat
+                )
+              )
+            }
+          } catch (error) {
+            console.log('Failed to rename chat:', error)
+          }
+        }}
+        onDeleteChat={async (chatId: string) => {
+          if (!user) return
+          
+          try {
+            const { error } = await supabase
+              .from('chat_history')
+              .delete()
+              .eq('id', chatId)
+              .eq('user_id', user.id)
+            
+            if (!error) {
+              setRecentChats(prev => prev.filter(chat => chat.id !== chatId))
+            }
+          } catch (error) {
+            console.log('Failed to delete chat:', error)
+          }
+        }}
+      />
+      
+      <MobileMenu 
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+        currentView="discover"
+        setCurrentView={(view) => {
+          if (view === 'chat') {
+            router.push('/chat')
+          }
+        }}
+        onOpenHealthDashboard={() => setShowDashboard(true)}
+        onOpenSettings={() => {}}
+        recentChats={recentChats}
+        onNewChat={() => {
+          router.push('/chat')
+        }}
+        onRefreshChats={() => user && fetchRecentChats(user.id)}
+        onLoadChat={(chatId: string) => {
+          router.push(`/chat?id=${chatId}`)
+        }}
+        onRenameChat={async (chatId: string, newTitle: string) => {
+          if (!user || !newTitle.trim()) return
+          
+          try {
+            const { error } = await supabase
+              .from('chat_history')
+              .update({ user_message: newTitle.trim() })
+              .eq('id', chatId)
+              .eq('user_id', user.id)
+            
+            if (!error) {
+              setRecentChats(prev => 
+                prev.map(chat => 
+                  chat.id === chatId 
+                    ? { ...chat, user_message: newTitle.trim() }
+                    : chat
+                )
+              )
+            }
+          } catch (error) {
+            console.log('Failed to rename chat:', error)
+          }
+        }}
+        onDeleteChat={async (chatId: string) => {
+          if (!user) return
+          
+          try {
+            const { error } = await supabase
+              .from('chat_history')
+              .delete()
+              .eq('id', chatId)
+              .eq('user_id', user.id)
+            
+            if (!error) {
+              setRecentChats(prev => prev.filter(chat => chat.id !== chatId))
+            }
+          } catch (error) {
+            console.log('Failed to delete chat:', error)
+          }
+        }}
+      />
       
       <HealthDashboard 
         isOpen={showDashboard} 

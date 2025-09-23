@@ -64,12 +64,11 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
             }`}>{children}</pre>
           ),
           blockquote: ({ children }) => (
-            <blockquote className={`border-l-4 pl-4 italic mb-3 ${
-              theme === 'dark' 
-                ? 'border-slate-600 text-gray-300' 
-                : 'border-navy-300 text-gray-700'
+            <blockquote className={`border-l-4 border-gray-200 pl-4 italic mb-3 ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
             }`}>{children}</blockquote>
           ),
+          hr: () => <hr className="border-gray-200/10 my-4" />,
         }}
       >
         {content}
