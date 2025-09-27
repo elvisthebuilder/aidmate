@@ -627,7 +627,9 @@ export default function ChatPage() {
       
       <HealthDashboard 
         isOpen={showHealthDashboard} 
-        onClose={() => setShowHealthDashboard(false)} 
+        onClose={() => setShowHealthDashboard(false)}
+        user={user}
+        userProfile={userProfile}
       />
       
       <UserSettings 

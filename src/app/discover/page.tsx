@@ -224,6 +224,7 @@ export default function DiscoverPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [recentChats, setRecentChats] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
+  const [userProfile, setUserProfile] = useState<any>(null)
   const [fullSidebar, setFullSidebar] = useState(false)
 
   const loadMorePosts = useCallback(async () => {
@@ -330,6 +331,7 @@ export default function DiscoverPage() {
       setUser(session?.user ?? null)
       if (session?.user) {
         fetchRecentChats(session.user.id)
+        fetchUserProfile(session.user.id)
       }
     })
 
@@ -338,13 +340,29 @@ export default function DiscoverPage() {
       setUser(session?.user ?? null)
       if (session?.user) {
         fetchRecentChats(session.user.id)
+        fetchUserProfile(session.user.id)
       } else {
         setRecentChats([])
+        setUserProfile(null)
       }
     })
 
     return () => subscription.unsubscribe()
   }, [])
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
+      
+      setUserProfile(data)
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+    }
+  }
 
   const fetchRecentChats = async (userId: string) => {
     try {
@@ -881,7 +899,9 @@ export default function DiscoverPage() {
       
       <HealthDashboard 
         isOpen={showDashboard} 
-        onClose={() => setShowDashboard(false)} 
+        onClose={() => setShowDashboard(false)}
+        user={user}
+        userProfile={userProfile}
       />
     </div>
   )
